@@ -1,0 +1,132 @@
+# 服务器使用本地代理
+
+基于 SSH `RemoteForward`，让服务器通过你本地电脑上的代理访问外网。
+
+## 适用场景
+
+如果你通过 VSCode Remote SSH 连接服务器，并且本地已经有可用代理，可以把本地代理端口转发到服务器上，再让服务器把 `127.0.0.1:7897` 当作代理地址使用。
+
+## 第一步：修改 SSH 连接配置（在本地电脑操作）
+
+如果你使用的是 VSCode Remote SSH：
+
+1. 打开本地 VSCode。
+2. 打开 SSH 配置文件 `~/.ssh/config`。
+3. 在对应的主机配置下添加 `RemoteForward`。
+
+示例：
+
+```sshconfig
+Host my-server
+    # 添加这一行
+    RemoteForward 7897 127.0.0.1:7897
+```
+
+这一步的作用是把服务器的 `7897` 端口转发到你本地电脑的 `127.0.0.1:7897`。
+
+## 第二步：修改服务器上的 `.zshrc` 配置（在服务器操作）
+
+既然已经建立了 SSH 隧道，对于服务器来说，代理就位于它本机的 `localhost`。
+
+因此，你需要把服务器上的 `PROXY_HOST` 强制改为 `127.0.0.1`。
+
+先打开配置文件：
+
+```bash
+vim ~/.zshrc
+```
+
+找到之前的代理配置并修改为：
+
+```bash
+# 注意：这里必须是 127.0.0.1，因为我们用了 SSH 隧道
+export PROXY_HOST="127.0.0.1"
+export PROXY_PORT="7897"
+```
+
+保存退出后执行：
+
+```bash
+source ~/.zshrc
+```
+
+## 推荐方案：在 `.zshrc` 中实现全局/按需代理
+
+为了让终端中的命令可以自动走代理，建议在服务器的 `~/.zshrc` 末尾加入下面这段配置。它提供了两个命令：
+
+- `proxy_on`：开启代理
+- `proxy_off`：关闭代理
+
+```bash
+# ==============================================
+# 代理配置（基于 SSH Remote Forwarding）
+# ==============================================
+
+# 1. 定义基础变量（对应 SSH 隧道端口）
+export PROXY_HOST="127.0.0.1"
+export PROXY_PORT="7897"
+export PROXY_URL="http://${PROXY_HOST}:${PROXY_PORT}"
+
+# 2. 定义“开启代理”的函数
+function proxy_on() {
+    export http_proxy="$PROXY_URL"
+    export https_proxy="$PROXY_URL"
+    export all_proxy="$PROXY_URL"
+
+    # Git 也需要单独设置
+    git config --global http.proxy "$PROXY_URL"
+    git config --global https.proxy "$PROXY_URL"
+
+    # 设置不走代理的地址（非常重要，否则本地服务会连不上）
+    export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,*.local"
+
+    echo "终端代理已开启（地址: $PROXY_URL）"
+}
+
+# 3. 定义“关闭代理”的函数
+function proxy_off() {
+    unset http_proxy
+    unset https_proxy
+    unset all_proxy
+
+    # 取消 Git 代理
+    git config --global --unset http.proxy
+    git config --global --unset https.proxy
+
+    echo "终端代理已关闭"
+}
+
+# 4. （可选）默认自动开启代理
+# 如果你希望每次登录都默认走代理，请取消下面这行的注释：
+# proxy_on
+```
+
+## 让配置生效
+
+修改完成后，在终端执行：
+
+```bash
+source ~/.zshrc
+```
+
+如果你不想每次手动开启代理，可以取消下面这行的注释：
+
+```bash
+# proxy_on
+```
+
+改成：
+
+```bash
+proxy_on
+```
+
+## 测试网络连通性
+
+如果系统里安装了 `curl`，可以执行：
+
+```bash
+curl -I https://www.google.com
+```
+
+如果返回 HTTP 响应头，说明代理链路已经基本可用。
