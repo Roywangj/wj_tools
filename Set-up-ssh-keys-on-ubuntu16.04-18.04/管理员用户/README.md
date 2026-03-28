@@ -1,5 +1,15 @@
 #   密钥登录(管理员)
 
+## 一键完成（推荐）
+
+也可以使用脚本 `setup_ssh_key.sh` 一键完成步骤 1 和 2：
+
+~~~shell
+bash setup_ssh_key.sh
+~~~
+
+---
+
 ## 1.制作密钥对
 进入个人账户后，输入以下命令：
 ~~~shell
@@ -58,6 +68,9 @@ PasswordAuthentication no
 最后，重启 SSH 服务：
 
 [root@host .ssh]$ service sshd restart
+# Ubuntu 24.04 使用以下命令：
+sudo systemctl restart ssh
+
 ~~~
 
 
