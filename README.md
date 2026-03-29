@@ -2,12 +2,13 @@
 
 一个面向日常开发环境配置、排障和工作流整理的文档仓库。
 
-当前主要收录四类内容：
+当前主要收录五类内容：
 
 - 代理配置与远程开发代理方案
 - LaTeX / Overleaf 写作环境配置
 - Ubuntu 服务器 SSH 密钥登录配置
 - Codex / Claude 相关使用与清理记录
+- Ubuntu 服务器装机与运维
 
 ## 快速导航
 
@@ -40,7 +41,25 @@
 
 - [codexclaude_usages/clean_claude_cache.md](./codexclaude_usages/clean_claude_cache.md)：macOS 下 Claude / Anthropic API 残留定位与清理记录
 
-### 4. 我想配置 Ubuntu 服务器 SSH 密钥登录
+### 4. 我想装机 / 运维 Ubuntu 服务器
+
+从这里开始：
+
+- [server_install/install_ubuntu24.md](./server_install/install_ubuntu24.md)：Ubuntu 24.04 安装笔记（Supermicro 主板）
+
+按具体需求继续看：
+
+- [server_install/apt-mirror.md](./server_install/apt-mirror.md)：Ubuntu 换源（清华镜像）
+- [server_install/fix_ip.md](./server_install/fix_ip.md)：Netplan 固定 IP 配置
+- [server_install/driver.md](./server_install/driver.md)：NVIDIA 驱动安装
+- [server_install/cuda_cudnn.md](./server_install/cuda_cudnn.md)：CUDA 11.8 & cuDNN 8.9 安装
+- [server_install/gpu_burn.md](./server_install/gpu_burn.md)：GPU Burn 压力测试
+- [server_install/mount.md](./server_install/mount.md)：NFS 存储挂载
+- [server_install/user_disk.md](./server_install/user_disk.md)：硬盘查询、清理与挂载
+- [server_install/ohmyzsh.md](./server_install/ohmyzsh.md)：Oh My Zsh 安装
+- [server_install/scripts/](./server_install/scripts/)：批量建用户、SSH 密钥配置、常用工具安装等脚本
+
+### 5. 我想配置 Ubuntu 服务器 SSH 密钥登录
 
 从这里开始：
 
@@ -68,6 +87,17 @@ wj_tools/
 │   ├── Overleaf_AI_IDE_Guide.md
 │   ├── LaTeX_Setup_Guide.md
 │   └── Local_LaTeX_Compiler_Setup.md
+├── server_install/
+│   ├── install_ubuntu24.md
+│   ├── apt-mirror.md
+│   ├── fix_ip.md
+│   ├── driver.md
+│   ├── cuda_cudnn.md
+│   ├── gpu_burn.md
+│   ├── mount.md
+│   ├── user_disk.md
+│   ├── ohmyzsh.md
+│   └── scripts/
 ├── Set-up-ssh-keys-on-ubuntu16.04-18.04/
 │   ├── README.md
 │   ├── 普通用户/
