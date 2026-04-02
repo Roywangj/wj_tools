@@ -63,6 +63,65 @@
 | swap | 与内存大小相同 | swap | — |
 | 根分区 | 剩余全部 | ext4 | / |
 
+## 安装 OpenSSH Server
+
+### 安装
+
+```bash
+sudo apt update
+sudo apt install -y openssh-server
+```
+
+### 查看状态
+
+```bash
+sudo systemctl status ssh
+```
+
+### 设置开机自启
+
+```bash
+sudo systemctl enable ssh
+sudo systemctl start ssh
+```
+
+### 查看本机 IP
+
+```bash
+ip a
+```
+
+### 从另一台机器连接
+
+```bash
+ssh 用户名@服务器IP
+```
+
+### 配置文件（可选）
+
+配置文件路径：`/etc/ssh/sshd_config`
+
+常用修改项：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `Port` | 22 | SSH 监听端口，可改为其他端口提升安全性 |
+| `PermitRootLogin` | prohibit-password | 建议设为 `no` 禁止 root 直接登录 |
+| `PasswordAuthentication` | yes | 若使用密钥登录，可设为 `no` 关闭密码登录 |
+
+修改配置后需重启服务：
+
+```bash
+sudo systemctl restart ssh
+```
+
+### 防火墙放行（如启用了 ufw）
+
+```bash
+sudo ufw allow ssh
+sudo ufw enable
+```
+
 ## 常见报错
 
 ### `/init: line 38: can't open /dev/xxx: No medium found`

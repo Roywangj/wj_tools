@@ -99,10 +99,16 @@ sudo systemctl daemon-reload
 避免存储节点离线时卡住开机（可能卡 90 秒以上）。
 
 ```bash
+sudo mkdir -p /data3 /data4
 echo '10.106.15.88:/data /data3 nfs defaults,noauto,x-systemd.automount 0 0' | sudo tee -a /etc/fstab
 echo '10.106.15.88:/datav2 /data4 nfs defaults,noauto,x-systemd.automount 0 0' | sudo tee -a /etc/fstab
 sudo systemctl daemon-reload
+sudo systemctl enable --now data3.automount data4.automount
 ```
+
+> `daemon-reload` 只是让 systemd 读取新配置，automount unit 仍处于 `inactive` 状态。
+> 需要 `enable --now` 才能激活监听（`--now` 等同于同时执行 `start`），并设置开机自启。
+> 激活后，首次访问 `/data3` 或 `/data4` 时会自动触发实际挂载。
 
 ### fstab NFS 挂载选项说明
 
