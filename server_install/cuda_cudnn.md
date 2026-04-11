@@ -43,9 +43,9 @@ sudo bash cuda_11.8.0_520.61.05_linux.run
 tar -xf cudnn-linux-x86_64-8.9.7.29_cuda11-archive.tar.xz
 cd cudnn-linux-x86_64-8.9.7.29_cuda11-archive
 
-sudo cp ./include/cudnn.h /usr/local/cuda-11.8/include/
+sudo cp ./include/cudnn*.h /usr/local/cuda-11.8/include/
 sudo cp ./lib/libcudnn* /usr/local/cuda-11.8/lib64/
-sudo chmod a+r /usr/local/cuda-11.8/include/cudnn.h
+sudo chmod a+r /usr/local/cuda-11.8/include/cudnn*.h
 sudo chmod a+r /usr/local/cuda-11.8/lib64/libcudnn*
 ```
 

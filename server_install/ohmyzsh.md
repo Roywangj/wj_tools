@@ -29,7 +29,7 @@ sh -c "$(wget -O- https://install.ohmyz.sh/)"
 ```
 git clone https://gitee.com/mirrors/oh-my-zsh.git  
 ```
-然后重命名 `.oh-my-zsh`
+然后重命名 `.oh-my-zsh` （mv oh-my-zsh .oh-my-zsh ）
 
 ## 3. 安装插件
 
