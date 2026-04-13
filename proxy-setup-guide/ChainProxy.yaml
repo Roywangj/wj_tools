@@ -1,0 +1,25 @@
+port: 7890
+socks-port: 7891
+allow-lan: true
+mode: rule
+log-level: info
+external-controller: :9090
+proxies:
+  - {【这里粘贴您的机场节点】}
+  - {
+      name: 静态住宅代理, 
+      server: 【主机】, 
+      port: 【端口】, 
+      type: socks5,
+      username: 【用户名】, 
+      password: 【密码】, 
+      dialer-proxy: 魔法
+    }
+proxy-groups:
+  - name: 🤖 AI 服务
+    type: select
+    proxies:
+      - 静态住宅代理
+      - DIRECT
+rules:
+  - MATCH, 🤖 AI 服务
