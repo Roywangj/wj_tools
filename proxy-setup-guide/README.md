@@ -130,6 +130,20 @@ export PROXY_URL="http://${PROXY_HOST}:${PROXY_PORT}"
 
 完整说明见：[服务器使用本地代理（LAPRF）](./服务器使用本地代理_laprf.md)
 
+## 🔗 补充方案：Chain Proxy（机场 + 静态住宅代理）
+
+如果你需要先通过机场节点出站，再把特定流量切到静态住宅代理，可以使用这个补充方案。
+
+它适用于 Clash 场景，核心思路是：
+
+1. 保留现有机场节点作为基础出口
+2. 新增一个静态住宅代理节点
+3. 在 `proxy-groups` 和 `rules` 中把目标流量切到住宅代理
+
+不同版本的 Clash 配置方式略有区别：旧版通常需要 `dialer-proxy`，新版 Clash `2.4.7` 的记录配置不需要 `dialer-proxy`，但需要显式设置 `udp: true`。
+
+完整说明见：[Chain Proxy 配置说明](./chainproxy.md)
+
 ## 📁 文件说明
 
 | 文件 | 说明 |
@@ -138,6 +152,7 @@ export PROXY_URL="http://${PROXY_HOST}:${PROXY_PORT}"
 | `proxy-setup-guide.md` | [完整配置指南](./proxy-setup-guide.md) |
 | `proxy-quick-reference.md` | [快速参考文档](./proxy-quick-reference.md) |
 | `服务器使用本地代理_laprf.md` | [服务器复用本地代理的补充方案](./服务器使用本地代理_laprf.md) |
+| `chainproxy.md` | [机场节点串联静态住宅代理的补充说明](./chainproxy.md) |
 | `.zshrc` | Zsh 配置示例文件 |
 
 ## 🎯 工作原理

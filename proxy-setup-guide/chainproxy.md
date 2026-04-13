@@ -97,7 +97,7 @@ rules:
     udp: true
   }
 ```
-然后在 proxy group 中写入 
+然后在 proxy group 中写入
 ```yaml
   - 静态住宅代理
 ```
@@ -111,6 +111,50 @@ Tip: 需要在 proxy 和 proxy group 中都写入，否则无法正常显示
 | 配置入口 | 新建 `YAML` 订阅 | 直接编辑当前机场配置 |
 | `dialer-proxy` | 需要 | 不需要 |
 | `udp: true` | 机场节点建议开启 | 静态住宅代理需要开启 |
+
+## 配置验证
+
+配置完成后，建议同时做网页测试和终端测试，确认出口 IP 已切到静态住宅代理。
+
+### 1. 网页测试
+
+可在浏览器中打开以下网站查看当前出口 IP、地区和运营商信息：
+
+- `ping0.cc`
+- `ip2location.com`
+- `whoer.com`
+
+如果网页显示的 IP、地区和运营商与静态住宅代理信息一致，说明链式代理基本生效。
+
+### 2. 终端测试
+
+在已经走代理的终端里执行：
+
+```bash
+curl ipinfo.io
+```
+
+示例返回结果如下，已对关键信息做脱敏处理：
+
+```json
+{
+  "ip": "204.252.xx.xx",
+  "city": "Dover",
+  "region": "Delaware",
+  "country": "US",
+  "loc": "39.15xx,-75.52xx",
+  "org": "AS701 <运营商信息已隐去>",
+  "postal": "199xx",
+  "timezone": "America/New_York",
+  "readme": "https://ipinfo.io/missingauth"
+}
+```
+
+重点检查以下字段是否符合预期：
+
+- `ip`：是否已经变为住宅代理出口
+- `country` / `region` / `city`：是否与目标地区一致
+- `org`：是否与预期运营商类型大致匹配
 
 ## 建议
 
