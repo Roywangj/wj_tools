@@ -37,26 +37,99 @@
 
 ```bash
 # ==================== 代理配置 ====================
-# 第一步：设置代理主机和端口（修改这两行即可更换代理地址）
-PROXY_HOST="10.106.1.36"
-PROXY_PORT="7897"
+# 第一步：两种切换入口（端口各自指定，避免与其他同学冲突）
+function proxy_lab() {    # 走实验室代理机（LAN 固定网关）
+    export PROXY_HOST="10.106.1.36"
+    export PROXY_PORT="7897"                         # 实验室代理机监听端口
+    export PROXY_URL="http://${PROXY_HOST}:${PROXY_PORT}"
+    _proxy_apply
+}
 
-# 第二步：应用代理设置（以下四行无需修改）
-export http_proxy=http://${PROXY_HOST}:${PROXY_PORT}
-export https_proxy=http://${PROXY_HOST}:${PROXY_PORT}
-export all_proxy=socks5://${PROXY_HOST}:${PROXY_PORT}
-# export no_proxy=localhost,127.0.0.1,localaddress,.localdomain.com,10.0.0.0/8
+function proxy_local() {  # 走本机代理（经 SSH RemoteForward 隧道）
+    export PROXY_HOST="127.0.0.1"
+    export PROXY_PORT="5140"                         # 服务器端隧道监听端口，避让公共 7897
+    export PROXY_URL="http://${PROXY_HOST}:${PROXY_PORT}"
+    _proxy_apply
+}
 
-# 同步代理配置到 VSCode/Cursor
+# 第三步：内部函数，实际下发环境变量 / Git 配置 / no_proxy
+function _proxy_apply() {
+    export http_proxy="$PROXY_URL"
+    export https_proxy="$PROXY_URL"
+    export all_proxy="socks5://${PROXY_HOST}:${PROXY_PORT}"
+
+    # Git 全局代理
+    git config --global http.proxy  "$PROXY_URL"
+    git config --global https.proxy "$PROXY_URL"
+
+    # 内网/本地地址直连，避免校园网认证等被拦
+    export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,*.local"
+
+    echo "代理已切换到 $PROXY_URL"
+}
+
+function proxy_off() {
+    unset http_proxy https_proxy all_proxy
+    git config --global --unset http.proxy  2>/dev/null
+    git config --global --unset https.proxy 2>/dev/null
+    echo "代理已关闭"
+}
+
+# 第三步半：代理链路三段式自检
+#   1) SSH RemoteForward 服务器端是否在监听
+#   2) 服务器能否直连 $PROXY_HOST:$PROXY_PORT 的代理
+#   3) 当前 shell 的 http_proxy 环境变量是否能打通外网
+function proxy_test() {
+    echo "==== [1/3] 隧道监听检测 ($PROXY_HOST:$PROXY_PORT) ===="
+    if [[ "$PROXY_HOST" == "127.0.0.1" ]]; then
+        ss -tln 2>/dev/null | grep -E "[:.]${PROXY_PORT}\b" \
+            && echo "✅ 端口 $PROXY_PORT 正在监听" \
+            || echo "❌ 端口 $PROXY_PORT 未监听（检查本地 ~/.ssh/config 的 RemoteForward 是否生效）"
+    else
+        echo "↪ 非本地转发模式，跳过隧道检测"
+    fi
+
+    echo "==== [2/3] 代理点对点可达 ===="
+    curl -x "http://${PROXY_HOST}:${PROXY_PORT}" -sS -o /dev/null -m 8 \
+         -w "HTTP %{http_code}  耗时 %{time_total}s\n" https://www.google.com \
+         && echo "✅ 代理能打通 Google" || echo "❌ 代理无法访问外网"
+
+    echo "==== [3/3] 当前 shell 环境变量 ===="
+    if [[ -n "$http_proxy" ]]; then
+        curl -sS -o /dev/null -m 8 \
+             -w "HTTP %{http_code}  出口 IP 检测见下行\n" https://www.google.com \
+             && curl -sS -m 8 https://ipinfo.io/ip && echo
+    else
+        echo "⚠ 当前 shell 未设置 http_proxy，可先执行 proxy_lab / proxy_local"
+    fi
+}
+
+# 同步代理配置到 VSCode/Cursor 的别名（被下方自动同步以及手动调用复用）
 alias sync-proxy='~/sync-proxy-config.sh'
+
+# ---------------------------------------------------------------
+# 第四步：默认登录时走哪条线路？（二选一，取消对应行前的 # 即可）
+#
+#   - proxy_lab   ：走实验室代理机（LAN 固定网关，断线不影响后台任务）
+#   - proxy_local ：走本机代理（需本地 ~/.ssh/config 配 RemoteForward）
+# ---------------------------------------------------------------
+proxy_lab
+# proxy_local
+
+# 第五步：把当前代理同步到 VSCode/Cursor（不想每次启动都跑可注释掉）
+sync-proxy >/dev/null
 ```
 
 **说明：**
-- `PROXY_HOST`：代理服务器的 IP 地址（**可自定义**）
-- `PROXY_PORT`：代理服务器的端口号（**可自定义**）
-- `http_proxy` 等：终端环境变量，影响 curl、wget、Python 等工具
-- `no_proxy`：不走代理的地址列表（目前已注释，如需启用请去掉 `#`）
-- `sync-proxy`：快捷命令，用于同步配置到编辑器
+- `PROXY_PORT`：本地与实验室代理机复用的监听端口（**可自定义**）。
+- `proxy_lab` / `proxy_local` / `proxy_off`：三个入口随时可调用，同一时间只有一套生效，切换即刻覆盖。
+  - `proxy_lab`：走实验室/LAN 上固定的代理机（默认方案）。
+  - `proxy_local`：走本机代理（本地转发方案），需配合本地 `~/.ssh/config` 的 `RemoteForward 7897 127.0.0.1:7897`。
+  - `proxy_off`：关闭代理并清除 Git 全局代理。
+- 默认启用 `proxy_lab` + 自动 `sync-proxy`，每次新开 shell 会把当前代理地址同步到 VSCode/Cursor 的 `settings.json`；切换到 `proxy_local` 后下次启动也会自动同步。
+- `no_proxy` 默认包含 `10.0.0.0/8`，校园网认证（如 `10.0.0.55`）不会被代理拦截。
+- `sync-proxy`：快捷命令，也可随时手动调用。
+- `proxy_test`：三段式自检（隧道监听 / 代理点对点 / 当前 shell 变量），代理不通时一条命令定位问题层。
 
 ### 2. 同步脚本 (`~/sync-proxy-config.sh`)
 
@@ -216,6 +289,37 @@ source ~/.zshrc
 # export http_proxy=http://${PROXY_HOST}:7897
 # export https_proxy=http://${PROXY_HOST}:7897
 # export all_proxy=socks5://${PROXY_HOST}:7897
+```
+
+#### 代理链路自检（`proxy_test`）
+
+上面 `.zshrc` 片段里内置了一个三段式自检函数 `proxy_test`，用于在「代理不通」时快速定位问题出在哪一层：
+
+```bash
+proxy_test
+```
+
+它依次检查：
+
+1. **隧道监听**：`proxy_local` 模式下看服务器 `$PROXY_PORT` 是否确实被 SSH `RemoteForward` 打开。
+2. **代理点对点可达**：用 `curl -x http://$PROXY_HOST:$PROXY_PORT` 直连代理访问 Google，跳过 shell 变量干扰——这一步失败说明**代理本身**有问题。
+3. **当前 shell 环境变量**：用 `http_proxy` 打一次请求并打印出口 IP（`ipinfo.io/ip`），验证 `proxy_lab` / `proxy_local` 是否已经注入环境变量。
+
+> 推荐节奏：新登录服务器 → `proxy_lab`（或 `proxy_local`）→ `proxy_test` 一次过三关 → 再跑训练 / `apt` / `pip`。
+
+##### 不用 `proxy_test` 的手动三步
+
+没加载 `proxy_test` 时（比如还没 `source ~/.zshrc`），直接敲下面三条命令等价：
+
+```bash
+# 1) 隧道是否在服务器端监听
+ss -tlnp | grep 5140   # 看到 5140 说明 SSH RemoteForward 生效
+
+# 2) 服务器能否打到本地 Clash
+curl -x http://127.0.0.1:5140 -I https://www.google.com
+
+# 3) 终端代理变量是否走通
+proxy_on && curl -I https://www.google.com
 ```
 
 ---

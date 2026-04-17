@@ -5,7 +5,9 @@ mode: rule
 log-level: info
 external-controller: :9090
 proxies:
-  - {【这里粘贴您的机场节点】}
+  # 机场节点 这里直接从当前的机场中复制一个过来就好
+  # 注意：后面静态住宅代理的 dialer-proxy 值，必须和这里的 name 完全一致
+  - {【这里粘贴您的机场节点】}  
   - {
       name: 静态住宅代理, 
       server: 【主机】, 

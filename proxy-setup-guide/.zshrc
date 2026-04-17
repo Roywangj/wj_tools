@@ -149,14 +149,59 @@ export HUGGINGFACE_HUB_CACHE="$HF_HOME/huggingface/hub"
 
 # export CPLUS_INCLUDE_PATH=$(conda info --base)/envs/mamba3d/include:$CPLUS_INCLUDE_PATH
 
-PROXY_HOST="10.106.1.36"
-PROXY_PORT="7897"
+# ==================== 代理配置 ====================
+# 第一步：两种切换入口（端口各自指定，避免与其他同学冲突）
+function proxy_lab() {    # 走实验室代理机（LAN 固定网关）
+    export PROXY_HOST="10.106.1.36"
+    export PROXY_PORT="7897"                         # 实验室代理机监听端口
+    export PROXY_URL="http://${PROXY_HOST}:${PROXY_PORT}"
+    _proxy_apply
+}
 
-# 第二步：应用代理设置（以下四行无需修改）
-export http_proxy=http://${PROXY_HOST}:${PROXY_PORT}
-export https_proxy=http://${PROXY_HOST}:${PROXY_PORT}
-export all_proxy=socks5://${PROXY_HOST}:${PROXY_PORT}
-# export no_proxy=localhost,127.0.0.1,localaddress,.localdomain.com,10.0.0.0/8
+function proxy_local() {  # 走本机代理（经 SSH RemoteForward 隧道）
+    export PROXY_HOST="127.0.0.1"
+    export PROXY_PORT="5140"                         # 服务器端隧道监听端口，避让公共 7897
+    export PROXY_URL="http://${PROXY_HOST}:${PROXY_PORT}"
+    _proxy_apply
+}
 
-# 同步代理配置到 VSCode/Cursor
-alias sync-proxy='~/sync-proxy-config.sh'
+# 第三步：内部函数，实际下发环境变量 / Git 配置 / no_proxy
+function _proxy_apply() {
+    export http_proxy="$PROXY_URL"
+    export https_proxy="$PROXY_URL"
+    export all_proxy="socks5://${PROXY_HOST}:${PROXY_PORT}"
+
+    # Git 全局代理
+    git config --global http.proxy  "$PROXY_URL"
+    git config --global https.proxy "$PROXY_URL"
+
+    # 内网/本地地址直连，避免校园网认证等被拦
+    export no_proxy="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,*.local"
+
+    echo "代理已切换到 $PROXY_URL"
+}
+
+function proxy_off() {
+    unset http_proxy https_proxy all_proxy
+    git config --global --unset http.proxy  2>/dev/null
+    git config --global --unset https.proxy 2>/dev/null
+    echo "代理已关闭"
+}
+
+# 同步代理配置到 VSCode/Cursor 的别名（被下方自动同步以及手动调用复用）
+alias sync-proxy='~/wj_tools/proxy-setup-guide/sync-proxy-config.sh'
+# 一键体检：打印当前终端代理变量 + 编辑器 settings.json 内容
+alias echo-proxy='~/wj_tools/proxy-setup-guide/echo_proxy.sh'
+
+# ---------------------------------------------------------------
+# 第四步：默认登录时走哪条线路？（二选一，取消对应行前的 # 即可）
+#
+#   - proxy_lab   ：走实验室代理机（LAN 固定网关，断线不影响后台任务）
+#   - proxy_local ：走本机代理（需本地 ~/.ssh/config 配 RemoteForward）
+# ---------------------------------------------------------------
+proxy_lab
+# proxy_local
+
+# 第五步：登录时自动同步代理到编辑器，并打印一次体检信息（不想要就注释掉）
+sync-proxy >/dev/null
+echo-proxy

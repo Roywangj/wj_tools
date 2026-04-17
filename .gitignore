@@ -1,2 +1,5 @@
 .history
 .claude
+
+# 本地私有代理配置（含凭据，切勿上传）
+proxy-setup-guide/ChainProxy_wj.yaml
