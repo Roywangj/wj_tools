@@ -1,0 +1,734 @@
+# GPU 诊断报告
+时间: 2026年 04月 20日 星期一 15:53:14 CST
+主机: ubuntu
+
+===== 内核版本 =====
+$ uname -a
+Linux ubuntu 5.4.0-121-generic #137~18.04.1-Ubuntu SMP Mon Jun 20 07:25:24 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux
+
+===== 驱动版本 =====
+$ cat /proc/driver/nvidia/version 2>/dev/null || echo '(no nvidia driver loaded)'
+NVRM version: NVIDIA UNIX x86_64 Kernel Module  550.144.03  Mon Dec 30 17:44:08 UTC 2024
+GCC version:  gcc version 7.5.0 (Ubuntu 7.5.0-6ubuntu2) 
+
+===== 已加载的 nvidia 内核模块 =====
+$ lsmod | grep -i nvidia || echo '(无)'
+nvidia_uvm           4444160  20
+nvidia_drm             77824  0
+nvidia_modeset       1339392  1 nvidia_drm
+nvidia              54276096  325 nvidia_uvm,nvidia_modeset
+drm_kms_helper        188416  5 ast,nvidia_drm,nouveau
+drm                   491520  8 drm_kms_helper,drm_vram_helper,ast,nvidia,nvidia_drm,ttm,nouveau
+
+===== nvidia-smi (5s 超时;卡死说明 GPU 已掉线) =====
+$ timeout 5 nvidia-smi; echo '[exit='$?']'
+Mon Apr 20 15:53:14 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.144.03             Driver Version: 550.144.03     CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 3090        Off |   00000000:3D:00.0 Off |                  N/A |
+| 72%   83C    P2            217W /  350W |    2518MiB /  24576MiB |     44%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA GeForce RTX 3090        Off |   00000000:3E:00.0 Off |                  N/A |
+| 71%   78C    P2            206W /  350W |    7526MiB /  24576MiB |     99%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA GeForce RTX 3090        Off |   00000000:40:00.0 Off |                  N/A |
+| 48%   70C    P2            268W /  350W |   18522MiB /  24576MiB |     61%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA GeForce RTX 3090        Off |   00000000:41:00.0 Off |                  N/A |
+|100%   77C    P2            228W /  350W |   21666MiB /  24576MiB |     96%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+|   4  NVIDIA GeForce RTX 3090        Off |   00000000:B1:00.0 Off |                  N/A |
+| 32%   29C    P8             25W /  350W |       1MiB /  24576MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+|   5  NVIDIA GeForce RTX 3090        Off |   00000000:B2:00.0 Off |                  N/A |
+| 41%   31C    P8             25W /  350W |       1MiB /  24576MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+|   6  NVIDIA GeForce RTX 3090        Off |   00000000:B4:00.0 Off |                  N/A |
+| 30%   32C    P8             14W /  350W |       1MiB /  24576MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+|   7  NVIDIA GeForce RTX 3090        Off |   00000000:B5:00.0 Off |                  N/A |
+| 30%   31C    P8             21W /  350W |       1MiB /  24576MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A     81433      C   python                                       2512MiB |
+|    1   N/A  N/A     92209      C   python                                       7518MiB |
+|    2   N/A  N/A      5580      C   python                                      18514MiB |
+|    3   N/A  N/A      5673      C   python                                      21658MiB |
++-----------------------------------------------------------------------------------------+
+[exit=0]
+
+===== nvidia-smi topo -m (PCIe 拓扑 + NUMA) =====
+$ timeout 5 nvidia-smi topo -m; echo '[exit='$?']'
+	[4mGPU0	GPU1	GPU2	GPU3	GPU4	GPU5	GPU6	GPU7	CPU Affinity	NUMA Affinity	GPU NUMA ID[0m
+GPU0	 X 	PIX	PIX	PIX	SYS	SYS	SYS	SYS	0-19,40-59	0		N/A
+GPU1	PIX	 X 	PIX	PIX	SYS	SYS	SYS	SYS	0-19,40-59	0		N/A
+GPU2	PIX	PIX	 X 	PIX	SYS	SYS	SYS	SYS	0-19,40-59	0		N/A
+GPU3	PIX	PIX	PIX	 X 	SYS	SYS	SYS	SYS	0-19,40-59	0		N/A
+GPU4	SYS	SYS	SYS	SYS	 X 	PIX	PIX	PIX	20-39,60-79	1		N/A
+GPU5	SYS	SYS	SYS	SYS	PIX	 X 	PIX	PIX	20-39,60-79	1		N/A
+GPU6	SYS	SYS	SYS	SYS	PIX	PIX	 X 	PIX	20-39,60-79	1		N/A
+GPU7	SYS	SYS	SYS	SYS	PIX	PIX	PIX	 X 	20-39,60-79	1		N/A
+
+Legend:
+
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+  NV#  = Connection traversing a bonded set of # NVLinks
+[exit=0]
+
+===== lspci: 所有 NVIDIA 设备 (留意 rev ff = 掉线) =====
+$ lspci | grep -i nvidia
+3d:00.0 VGA compatible controller: NVIDIA Corporation GA102 [GeForce RTX 3090] (rev a1)
+3d:00.1 Audio device: NVIDIA Corporation GA102 High Definition Audio Controller (rev a1)
+3e:00.0 VGA compatible controller: NVIDIA Corporation GA102 [GeForce RTX 3090] (rev a1)
+3e:00.1 Audio device: NVIDIA Corporation GA102 High Definition Audio Controller (rev a1)
+40:00.0 VGA compatible controller: NVIDIA Corporation GA102 [GeForce RTX 3090] (rev a1)
+40:00.1 Audio device: NVIDIA Corporation GA102 High Definition Audio Controller (rev a1)
+41:00.0 VGA compatible controller: NVIDIA Corporation GA102 [GeForce RTX 3090] (rev a1)
+41:00.1 Audio device: NVIDIA Corporation GA102 High Definition Audio Controller (rev a1)
+b1:00.0 VGA compatible controller: NVIDIA Corporation GA102 [GeForce RTX 3090] (rev a1)
+b1:00.1 Audio device: NVIDIA Corporation GA102 High Definition Audio Controller (rev a1)
+b2:00.0 VGA compatible controller: NVIDIA Corporation GA102 [GeForce RTX 3090] (rev a1)
+b2:00.1 Audio device: NVIDIA Corporation GA102 High Definition Audio Controller (rev a1)
+b4:00.0 VGA compatible controller: NVIDIA Corporation GA102 [GeForce RTX 3090] (rev a1)
+b4:00.1 Audio device: NVIDIA Corporation GA102 High Definition Audio Controller (rev a1)
+b5:00.0 VGA compatible controller: NVIDIA Corporation GA102 [GeForce RTX 3090] (rev a1)
+b5:00.1 Audio device: NVIDIA Corporation GA102 High Definition Audio Controller (rev a1)
+
+===== lspci -tv (完整 PCIe 树) =====
+$ lspci -tv
+-+-[0000:d7]-+-05.0  Intel Corporation Sky Lake-E VT-d
+ |           +-05.2  Intel Corporation Sky Lake-E RAS Configuration Registers
+ |           +-05.4  Intel Corporation Sky Lake-E IOxAPIC Configuration Registers
+ |           +-0e.0  Intel Corporation Sky Lake-E KTI 0
+ |           +-0e.1  Intel Corporation Sky Lake-E UPI Registers
+ |           +-0f.0  Intel Corporation Sky Lake-E KTI 0
+ |           +-0f.1  Intel Corporation Sky Lake-E UPI Registers
+ |           +-10.0  Intel Corporation Sky Lake-E KTI 0
+ |           +-10.1  Intel Corporation Sky Lake-E UPI Registers
+ |           +-12.0  Intel Corporation Sky Lake-E M3KTI Registers
+ |           +-12.1  Intel Corporation Sky Lake-E M3KTI Registers
+ |           +-12.2  Intel Corporation Sky Lake-E M3KTI Registers
+ |           +-12.4  Intel Corporation Sky Lake-E M3KTI Registers
+ |           +-12.5  Intel Corporation Sky Lake-E M3KTI Registers
+ |           +-15.0  Intel Corporation Sky Lake-E M2PCI Registers
+ |           +-15.1  Intel Corporation Sky Lake-E DDRIO Registers
+ |           +-16.0  Intel Corporation Sky Lake-E M2PCI Registers
+ |           +-16.1  Intel Corporation Sky Lake-E DDRIO Registers
+ |           +-16.4  Intel Corporation Sky Lake-E M2PCI Registers
+ |           +-16.5  Intel Corporation Sky Lake-E DDRIO Registers
+ |           +-17.0  Intel Corporation Sky Lake-E M2PCI Registers
+ |           \-17.1  Intel Corporation Sky Lake-E DDRIO Registers
+ +-[0000:ae]-+-00.0-[af-b5]----00.0-[b0-b5]--+-00.0-[b1]--+-00.0  NVIDIA Corporation GA102 [GeForce RTX 3090]
+ |           |                               |            \-00.1  NVIDIA Corporation GA102 High Definition Audio Controller
+ |           |                               +-04.0-[b2]--+-00.0  NVIDIA Corporation GA102 [GeForce RTX 3090]
+ |           |                               |            \-00.1  NVIDIA Corporation GA102 High Definition Audio Controller
+ |           |                               +-0c.0-[b3]--
+ |           |                               +-10.0-[b4]--+-00.0  NVIDIA Corporation GA102 [GeForce RTX 3090]
+ |           |                               |            \-00.1  NVIDIA Corporation GA102 High Definition Audio Controller
+ |           |                               \-14.0-[b5]--+-00.0  NVIDIA Corporation GA102 [GeForce RTX 3090]
+ |           |                                            \-00.1  NVIDIA Corporation GA102 High Definition Audio Controller
+ |           +-05.0  Intel Corporation Sky Lake-E VT-d
+ |           +-05.2  Intel Corporation Sky Lake-E RAS Configuration Registers
+ |           +-05.4  Intel Corporation Sky Lake-E IOxAPIC Configuration Registers
+ |           +-08.0  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-09.0  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.0  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.1  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.2  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.3  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.4  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.5  Intel Corporation Sky Lake-E LM Channel 1
+ |           +-0a.6  Intel Corporation Sky Lake-E LMS Channel 1
+ |           +-0a.7  Intel Corporation Sky Lake-E LMDP Channel 1
+ |           +-0b.0  Intel Corporation Sky Lake-E DECS Channel 2
+ |           +-0b.1  Intel Corporation Sky Lake-E LM Channel 2
+ |           +-0b.2  Intel Corporation Sky Lake-E LMS Channel 2
+ |           +-0b.3  Intel Corporation Sky Lake-E LMDP Channel 2
+ |           +-0c.0  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0c.1  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0c.2  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0c.3  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0c.4  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0c.5  Intel Corporation Sky Lake-E LM Channel 1
+ |           +-0c.6  Intel Corporation Sky Lake-E LMS Channel 1
+ |           +-0c.7  Intel Corporation Sky Lake-E LMDP Channel 1
+ |           +-0d.0  Intel Corporation Sky Lake-E DECS Channel 2
+ |           +-0d.1  Intel Corporation Sky Lake-E LM Channel 2
+ |           +-0d.2  Intel Corporation Sky Lake-E LMS Channel 2
+ |           \-0d.3  Intel Corporation Sky Lake-E LMDP Channel 2
+ +-[0000:85]-+-05.0  Intel Corporation Sky Lake-E VT-d
+ |           +-05.2  Intel Corporation Sky Lake-E RAS Configuration Registers
+ |           +-05.4  Intel Corporation Sky Lake-E IOxAPIC Configuration Registers
+ |           +-08.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0b.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0b.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0b.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0b.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-11.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-11.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-11.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-11.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-1d.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-1d.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-1d.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-1d.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-1e.0  Intel Corporation Sky Lake-E PCU Registers
+ |           +-1e.1  Intel Corporation Sky Lake-E PCU Registers
+ |           +-1e.2  Intel Corporation Sky Lake-E PCU Registers
+ |           +-1e.3  Intel Corporation Sky Lake-E PCU Registers
+ |           +-1e.4  Intel Corporation Sky Lake-E PCU Registers
+ |           +-1e.5  Intel Corporation Sky Lake-E PCU Registers
+ |           \-1e.6  Intel Corporation Sky Lake-E PCU Registers
+ +-[0000:80]-+-04.0  Intel Corporation Sky Lake-E CBDMA Registers
+ |           +-04.1  Intel Corporation Sky Lake-E CBDMA Registers
+ |           +-04.2  Intel Corporation Sky Lake-E CBDMA Registers
+ |           +-04.3  Intel Corporation Sky Lake-E CBDMA Registers
+ |           +-04.4  Intel Corporation Sky Lake-E CBDMA Registers
+ |           +-04.5  Intel Corporation Sky Lake-E CBDMA Registers
+ |           +-04.6  Intel Corporation Sky Lake-E CBDMA Registers
+ |           +-04.7  Intel Corporation Sky Lake-E CBDMA Registers
+ |           +-05.0  Intel Corporation Sky Lake-E MM/Vt-d Configuration Registers
+ |           +-05.2  Intel Corporation Sky Lake-E RAS
+ |           +-05.4  Intel Corporation Sky Lake-E IOAPIC
+ |           +-08.0  Intel Corporation Sky Lake-E Ubox Registers
+ |           +-08.1  Intel Corporation Sky Lake-E Ubox Registers
+ |           \-08.2  Intel Corporation Sky Lake-E Ubox Registers
+ +-[0000:5d]-+-00.0-[5e]----00.0  Broadcom / LSI MegaRAID SAS-3 3108 [Invader]
+ |           +-03.0-[5f-61]----00.0-[60-61]----03.0-[61]--+-00.0  Intel Corporation Ethernet Connection X722 for 10GbE SFP+
+ |           |                                            \-00.1  Intel Corporation Ethernet Connection X722 for 10GbE SFP+
+ |           +-05.0  Intel Corporation Sky Lake-E VT-d
+ |           +-05.2  Intel Corporation Sky Lake-E RAS Configuration Registers
+ |           +-05.4  Intel Corporation Sky Lake-E IOxAPIC Configuration Registers
+ |           +-0e.0  Intel Corporation Sky Lake-E KTI 0
+ |           +-0e.1  Intel Corporation Sky Lake-E UPI Registers
+ |           +-0f.0  Intel Corporation Sky Lake-E KTI 0
+ |           +-0f.1  Intel Corporation Sky Lake-E UPI Registers
+ |           +-10.0  Intel Corporation Sky Lake-E KTI 0
+ |           +-10.1  Intel Corporation Sky Lake-E UPI Registers
+ |           +-12.0  Intel Corporation Sky Lake-E M3KTI Registers
+ |           +-12.1  Intel Corporation Sky Lake-E M3KTI Registers
+ |           +-12.2  Intel Corporation Sky Lake-E M3KTI Registers
+ |           +-12.4  Intel Corporation Sky Lake-E M3KTI Registers
+ |           +-12.5  Intel Corporation Sky Lake-E M3KTI Registers
+ |           +-15.0  Intel Corporation Sky Lake-E M2PCI Registers
+ |           +-15.1  Intel Corporation Sky Lake-E DDRIO Registers
+ |           +-16.0  Intel Corporation Sky Lake-E M2PCI Registers
+ |           +-16.1  Intel Corporation Sky Lake-E DDRIO Registers
+ |           +-16.4  Intel Corporation Sky Lake-E M2PCI Registers
+ |           +-16.5  Intel Corporation Sky Lake-E DDRIO Registers
+ |           +-17.0  Intel Corporation Sky Lake-E M2PCI Registers
+ |           \-17.1  Intel Corporation Sky Lake-E DDRIO Registers
+ +-[0000:3a]-+-00.0-[3b-41]----00.0-[3c-41]--+-00.0-[3d]--+-00.0  NVIDIA Corporation GA102 [GeForce RTX 3090]
+ |           |                               |            \-00.1  NVIDIA Corporation GA102 High Definition Audio Controller
+ |           |                               +-04.0-[3e]--+-00.0  NVIDIA Corporation GA102 [GeForce RTX 3090]
+ |           |                               |            \-00.1  NVIDIA Corporation GA102 High Definition Audio Controller
+ |           |                               +-0c.0-[3f]--
+ |           |                               +-10.0-[40]--+-00.0  NVIDIA Corporation GA102 [GeForce RTX 3090]
+ |           |                               |            \-00.1  NVIDIA Corporation GA102 High Definition Audio Controller
+ |           |                               \-14.0-[41]--+-00.0  NVIDIA Corporation GA102 [GeForce RTX 3090]
+ |           |                                            \-00.1  NVIDIA Corporation GA102 High Definition Audio Controller
+ |           +-05.0  Intel Corporation Sky Lake-E VT-d
+ |           +-05.2  Intel Corporation Sky Lake-E RAS Configuration Registers
+ |           +-05.4  Intel Corporation Sky Lake-E IOxAPIC Configuration Registers
+ |           +-08.0  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-09.0  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.0  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.1  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.2  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.3  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.4  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0a.5  Intel Corporation Sky Lake-E LM Channel 1
+ |           +-0a.6  Intel Corporation Sky Lake-E LMS Channel 1
+ |           +-0a.7  Intel Corporation Sky Lake-E LMDP Channel 1
+ |           +-0b.0  Intel Corporation Sky Lake-E DECS Channel 2
+ |           +-0b.1  Intel Corporation Sky Lake-E LM Channel 2
+ |           +-0b.2  Intel Corporation Sky Lake-E LMS Channel 2
+ |           +-0b.3  Intel Corporation Sky Lake-E LMDP Channel 2
+ |           +-0c.0  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0c.1  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0c.2  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0c.3  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0c.4  Intel Corporation Sky Lake-E Integrated Memory Controller
+ |           +-0c.5  Intel Corporation Sky Lake-E LM Channel 1
+ |           +-0c.6  Intel Corporation Sky Lake-E LMS Channel 1
+ |           +-0c.7  Intel Corporation Sky Lake-E LMDP Channel 1
+ |           +-0d.0  Intel Corporation Sky Lake-E DECS Channel 2
+ |           +-0d.1  Intel Corporation Sky Lake-E LM Channel 2
+ |           +-0d.2  Intel Corporation Sky Lake-E LMS Channel 2
+ |           \-0d.3  Intel Corporation Sky Lake-E LMDP Channel 2
+ +-[0000:17]-+-05.0  Intel Corporation Sky Lake-E VT-d
+ |           +-05.2  Intel Corporation Sky Lake-E RAS Configuration Registers
+ |           +-05.4  Intel Corporation Sky Lake-E IOxAPIC Configuration Registers
+ |           +-08.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-08.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-09.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0a.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0b.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0b.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0b.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0b.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0e.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-0f.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.4  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.5  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.6  Intel Corporation Sky Lake-E CHA Registers
+ |           +-10.7  Intel Corporation Sky Lake-E CHA Registers
+ |           +-11.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-11.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-11.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-11.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-1d.0  Intel Corporation Sky Lake-E CHA Registers
+ |           +-1d.1  Intel Corporation Sky Lake-E CHA Registers
+ |           +-1d.2  Intel Corporation Sky Lake-E CHA Registers
+ |           +-1d.3  Intel Corporation Sky Lake-E CHA Registers
+ |           +-1e.0  Intel Corporation Sky Lake-E PCU Registers
+ |           +-1e.1  Intel Corporation Sky Lake-E PCU Registers
+ |           +-1e.2  Intel Corporation Sky Lake-E PCU Registers
+ |           +-1e.3  Intel Corporation Sky Lake-E PCU Registers
+ |           +-1e.4  Intel Corporation Sky Lake-E PCU Registers
+ |           +-1e.5  Intel Corporation Sky Lake-E PCU Registers
+ |           \-1e.6  Intel Corporation Sky Lake-E PCU Registers
+ \-[0000:00]-+-00.0  Intel Corporation Sky Lake-E DMI3 Registers
+             +-04.0  Intel Corporation Sky Lake-E CBDMA Registers
+             +-04.1  Intel Corporation Sky Lake-E CBDMA Registers
+             +-04.2  Intel Corporation Sky Lake-E CBDMA Registers
+             +-04.3  Intel Corporation Sky Lake-E CBDMA Registers
+             +-04.4  Intel Corporation Sky Lake-E CBDMA Registers
+             +-04.5  Intel Corporation Sky Lake-E CBDMA Registers
+             +-04.6  Intel Corporation Sky Lake-E CBDMA Registers
+             +-04.7  Intel Corporation Sky Lake-E CBDMA Registers
+             +-05.0  Intel Corporation Sky Lake-E MM/Vt-d Configuration Registers
+             +-05.2  Intel Corporation Sky Lake-E RAS
+             +-05.4  Intel Corporation Sky Lake-E IOAPIC
+             +-08.0  Intel Corporation Sky Lake-E Ubox Registers
+             +-08.1  Intel Corporation Sky Lake-E Ubox Registers
+             +-08.2  Intel Corporation Sky Lake-E Ubox Registers
+             +-11.0  Intel Corporation C620 Series Chipset Family MROM 0
+             +-11.1  Intel Corporation C620 Series Chipset Family MROM 1
+             +-11.5  Intel Corporation C620 Series Chipset Family SSATA Controller [AHCI mode]
+             +-14.0  Intel Corporation C620 Series Chipset Family USB 3.0 xHCI Controller
+             +-14.2  Intel Corporation C620 Series Chipset Family Thermal Subsystem
+             +-16.0  Intel Corporation C620 Series Chipset Family MEI Controller #1
+             +-16.1  Intel Corporation C620 Series Chipset Family MEI Controller #2
+             +-16.4  Intel Corporation C620 Series Chipset Family MEI Controller #3
+             +-17.0  Intel Corporation C620 Series Chipset Family SATA Controller [AHCI mode]
+             +-1c.0-[01-02]----00.0-[02]----00.0  ASPEED Technology, Inc. ASPEED Graphics Family
+             +-1c.5-[03]--
+             +-1c.6-[04]--
+             +-1c.7-[05]--
+             +-1f.0  Intel Corporation C622 Series Chipset LPC/eSPI Controller
+             +-1f.2  Intel Corporation C620 Series Chipset Family Power Management Controller
+             +-1f.4  Intel Corporation C620 Series Chipset Family SMBus
+             \-1f.5  Intel Corporation C620 Series Chipset Family SPI Controller
+
+===== 每张 NVIDIA GPU 的 LnkCap / LnkSta (对比找出异常卡;需 sudo) =====
+$ 
+for s in $(lspci -D | awk '/NVIDIA/ && /VGA|3D/ {print $1}'); do
+    echo --- $s ---;
+    sudo lspci -vvv -s $s 2>/dev/null | grep -E 'LnkCap:|LnkSta:|DevSta:' | head -6;
+done
+--- 0000:3d:00.0 ---
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr- TransPend-
+		LnkCap:	Port #0, Speed 8GT/s, Width x16, ASPM L0s L1, Exit Latency L0s <1us, L1 <4us
+		LnkSta:	Speed 8GT/s (ok), Width x16 (ok)
+--- 0000:3e:00.0 ---
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr- TransPend-
+		LnkCap:	Port #0, Speed 8GT/s, Width x16, ASPM L0s L1, Exit Latency L0s <1us, L1 <4us
+		LnkSta:	Speed 8GT/s (ok), Width x16 (ok)
+--- 0000:40:00.0 ---
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr- TransPend+
+		LnkCap:	Port #0, Speed 8GT/s, Width x16, ASPM L0s L1, Exit Latency L0s <1us, L1 <4us
+		LnkSta:	Speed 8GT/s (ok), Width x16 (ok)
+--- 0000:41:00.0 ---
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr- TransPend-
+		LnkCap:	Port #0, Speed 8GT/s, Width x16, ASPM L0s L1, Exit Latency L0s <1us, L1 <4us
+		LnkSta:	Speed 8GT/s (ok), Width x16 (ok)
+--- 0000:b1:00.0 ---
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr- TransPend-
+		LnkCap:	Port #0, Speed 8GT/s, Width x16, ASPM L0s L1, Exit Latency L0s <512ns, L1 <16us
+		LnkSta:	Speed 2.5GT/s (downgraded), Width x16 (ok)
+--- 0000:b2:00.0 ---
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr- TransPend-
+		LnkCap:	Port #0, Speed 8GT/s, Width x16, ASPM L0s L1, Exit Latency L0s <512ns, L1 <16us
+		LnkSta:	Speed 2.5GT/s (downgraded), Width x16 (ok)
+--- 0000:b4:00.0 ---
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr- TransPend-
+		LnkCap:	Port #0, Speed 8GT/s, Width x16, ASPM L0s L1, Exit Latency L0s <512ns, L1 <16us
+		LnkSta:	Speed 2.5GT/s (downgraded), Width x16 (ok)
+--- 0000:b5:00.0 ---
+		DevSta:	CorrErr- NonFatalErr- FatalErr- UnsupReq- AuxPwr- TransPend-
+		LnkCap:	Port #0, Speed 8GT/s, Width x16, ASPM L0s L1, Exit Latency L0s <512ns, L1 <16us
+		LnkSta:	Speed 2.5GT/s (downgraded), Width x16 (ok)
+
+===== 本次开机 dmesg: nvidia / nvrm / xid =====
+$ dmesg -T 2>/dev/null | grep -iE 'nvidia|nvrm|xid' | tail -80 || echo '(空)'
+[一 4月 20 11:37:51 2026] nvidia 0000:41:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+[一 4月 20 11:37:51 2026] nvidia 0000:b1:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+[一 4月 20 11:37:51 2026] nvidia 0000:b2:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+[一 4月 20 11:37:51 2026] nvidia 0000:b4:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+[一 4月 20 11:37:51 2026] nvidia 0000:b5:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+[一 4月 20 11:37:51 2026] NVRM: loading NVIDIA UNIX x86_64 Kernel Module  550.144.03  Mon Dec 30 17:44:08 UTC 2024
+[一 4月 20 11:37:52 2026] nvidia-modeset: Loading NVIDIA Kernel Mode Setting Driver for UNIX platforms  550.144.03  Mon Dec 30 17:10:10 UTC 2024
+[一 4月 20 11:37:52 2026] [drm] [nvidia-drm] [GPU ID 0x00003d00] Loading driver
+[一 4月 20 11:37:52 2026] [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:3d:00.0 on minor 1
+[一 4月 20 11:37:52 2026] [drm] [nvidia-drm] [GPU ID 0x00003e00] Loading driver
+[一 4月 20 11:37:52 2026] [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:3e:00.0 on minor 2
+[一 4月 20 11:37:52 2026] [drm] [nvidia-drm] [GPU ID 0x00004000] Loading driver
+[一 4月 20 11:37:52 2026] [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:40:00.0 on minor 3
+[一 4月 20 11:37:52 2026] [drm] [nvidia-drm] [GPU ID 0x00004100] Loading driver
+[一 4月 20 11:37:52 2026] [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:41:00.0 on minor 4
+[一 4月 20 11:37:52 2026] [drm] [nvidia-drm] [GPU ID 0x0000b100] Loading driver
+[一 4月 20 11:37:52 2026] [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:b1:00.0 on minor 5
+[一 4月 20 11:37:52 2026] [drm] [nvidia-drm] [GPU ID 0x0000b200] Loading driver
+[一 4月 20 11:37:52 2026] [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:b2:00.0 on minor 6
+[一 4月 20 11:37:52 2026] [drm] [nvidia-drm] [GPU ID 0x0000b400] Loading driver
+[一 4月 20 11:37:52 2026] [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:b4:00.0 on minor 7
+[一 4月 20 11:37:52 2026] [drm] [nvidia-drm] [GPU ID 0x0000b500] Loading driver
+[一 4月 20 11:37:52 2026] [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:b5:00.0 on minor 8
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input15
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input29
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input30
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input14
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input31
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input32
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input16
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input17
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input18
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input33
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input34
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input23
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input24
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input19
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input20
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input25
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input26
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input21
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input22
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input27
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input28
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input35
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input57
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input58
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input36
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input59
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input60
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input38
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input51
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input52
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input37
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input53
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input61
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input62
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input39
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input40
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input45
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input46
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input54
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input55
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input41
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input47
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input42
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input48
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input49
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input56
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input43
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input44
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input50
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input7
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input8
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input9
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input10
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input11
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input12
+[一 4月 20 11:37:52 2026] input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input13
+[一 4月 20 12:02:37 2026] nvidia-uvm: Loaded the UVM driver, major device number 510.
+
+===== 本次开机 dmesg: PCIe AER / link down =====
+$ dmesg -T 2>/dev/null | grep -iE 'pcieport|aer|link down|bus error' | tail -40 || echo '(空)'
+[一 4月 20 11:37:45 2026] acpi PNP0A08:00: _OSC: platform does not support [SHPCHotplug AER LTR]
+[一 4月 20 11:37:45 2026] acpi PNP0A08:01: _OSC: platform does not support [SHPCHotplug AER LTR]
+[一 4月 20 11:37:45 2026] acpi PNP0A08:02: _OSC: platform does not support [SHPCHotplug AER LTR]
+[一 4月 20 11:37:45 2026] acpi PNP0A08:03: _OSC: platform does not support [SHPCHotplug AER LTR]
+[一 4月 20 11:37:45 2026] acpi PNP0A08:06: _OSC: platform does not support [SHPCHotplug AER LTR]
+[一 4月 20 11:37:45 2026] acpi PNP0A08:07: _OSC: platform does not support [SHPCHotplug AER LTR]
+[一 4月 20 11:37:45 2026] acpi PNP0A08:08: _OSC: platform does not support [SHPCHotplug AER LTR]
+[一 4月 20 11:37:45 2026] acpi PNP0A08:09: _OSC: platform does not support [SHPCHotplug AER LTR]
+[一 4月 20 11:37:46 2026] pcieport 0000:00:1c.0: PME: Signaling with IRQ 24
+[一 4月 20 11:37:46 2026] pcieport 0000:00:1c.5: PME: Signaling with IRQ 25
+[一 4月 20 11:37:46 2026] pcieport 0000:00:1c.6: PME: Signaling with IRQ 26
+[一 4月 20 11:37:46 2026] pcieport 0000:00:1c.7: PME: Signaling with IRQ 27
+[一 4月 20 11:37:46 2026] pcieport 0000:3a:00.0: PME: Signaling with IRQ 29
+[一 4月 20 11:37:46 2026] pcieport 0000:3c:00.0: pciehp: Slot #0 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+[一 4月 20 11:37:46 2026] pcieport 0000:3c:04.0: pciehp: Slot #4 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+[一 4月 20 11:37:46 2026] pcieport 0000:3c:0c.0: pciehp: Slot #12 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+[一 4月 20 11:37:46 2026] pcieport 0000:3c:10.0: pciehp: Slot #16 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+[一 4月 20 11:37:46 2026] pcieport 0000:3c:14.0: pciehp: Slot #20 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+[一 4月 20 11:37:46 2026] pcieport 0000:5d:00.0: PME: Signaling with IRQ 37
+[一 4月 20 11:37:46 2026] pcieport 0000:5d:03.0: PME: Signaling with IRQ 38
+[一 4月 20 11:37:46 2026] pcieport 0000:ae:00.0: PME: Signaling with IRQ 40
+[一 4月 20 11:37:46 2026] pcieport 0000:b0:00.0: pciehp: Slot #32 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+[一 4月 20 11:37:46 2026] pcieport 0000:b0:04.0: pciehp: Slot #36 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+[一 4月 20 11:37:46 2026] pcieport 0000:b0:0c.0: pciehp: Slot #44 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+[一 4月 20 11:37:46 2026] pcieport 0000:b0:10.0: pciehp: Slot #48 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+[一 4月 20 11:37:46 2026] pcieport 0000:b0:14.0: pciehp: Slot #52 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+[一 4月 20 11:37:47 2026] ata3: SATA link down (SStatus 0 SControl 300)
+[一 4月 20 11:37:47 2026] ata5: SATA link down (SStatus 0 SControl 300)
+[一 4月 20 11:37:47 2026] ata4: SATA link down (SStatus 0 SControl 300)
+[一 4月 20 11:37:47 2026] ata6: SATA link down (SStatus 0 SControl 300)
+[一 4月 20 11:37:47 2026] ata11: SATA link down (SStatus 0 SControl 300)
+[一 4月 20 11:37:47 2026] ata7: SATA link down (SStatus 0 SControl 300)
+[一 4月 20 11:37:47 2026] ata12: SATA link down (SStatus 0 SControl 300)
+[一 4月 20 11:37:47 2026] ata8: SATA link down (SStatus 0 SControl 300)
+[一 4月 20 11:37:47 2026] ata13: SATA link down (SStatus 0 SControl 300)
+[一 4月 20 11:37:47 2026] ata14: SATA link down (SStatus 0 SControl 300)
+[一 4月 20 11:37:47 2026] ata9: SATA link down (SStatus 0 SControl 300)
+[一 4月 20 11:37:47 2026] ata10: SATA link down (SStatus 0 SControl 300)
+
+===== 卡死在内核态的 GPU 相关进程 (D 状态) =====
+$ ps -eo pid,stat,wchan:32,cmd | awk '$2 ~ /D/' | grep -iE 'nvidia|python|cuda' || echo '(无)'
+(无)
+
+===== 历史 boot 列表 =====
+$ journalctl --list-boots 2>/dev/null | tail -10
+ -9 60f174da8d71439c97bd9b26b5bd8f75 Thu 2026-04-09 18:13:48 CST—Thu 2026-04-09 22:26:51 CST
+ -8 d281acd890cb4c87aa22f5b42022698f Thu 2026-04-09 22:37:11 CST—Thu 2026-04-09 22:40:55 CST
+ -7 5dad81553f1f456f812cda1cde466e1b Thu 2026-04-09 22:46:54 CST—Sat 2026-04-11 16:08:04 CST
+ -6 d78c5ee009da4ca1a24cf93c0aa0722f Sat 2026-04-11 16:16:26 CST—Sat 2026-04-11 16:30:01 CST
+ -5 6636d225b40b4088bafb9f04fadda34f Sat 2026-04-11 16:36:53 CST—Mon 2026-04-13 17:15:28 CST
+ -4 7fc865ab5ae34f7d9930609eb582a5db Mon 2026-04-13 17:21:16 CST—Tue 2026-04-14 17:32:03 CST
+ -3 ebdf51288fdc484db508b29bb70d2479 Tue 2026-04-14 17:44:56 CST—Fri 2026-04-17 16:41:52 CST
+ -2 9a4ed4c27afa4017bca4b43b7fee00b9 Fri 2026-04-17 16:51:31 CST—Sat 2026-04-18 10:16:56 CST
+ -1 d49625ee61ce46d2a5d784398c1ecf41 Sat 2026-04-18 10:24:13 CST—Mon 2026-04-20 11:32:00 CST
+  0 15c11a86f11641ca85a8737f1153510e Mon 2026-04-20 11:37:51 CST—Mon 2026-04-20 15:53:15 CST
+
+===== 上一次开机期间的 nvidia / xid / hung task 日志 =====
+$ sudo journalctl -b -1 -k 2>/dev/null | grep -iE 'nvidia|nvrm|xid|hung task|pcieport|aer' | tail -120 || echo '(无历史 boot 或未开启持久 journal)'
+4月 18 10:24:13 ubuntu kernel: acpi PNP0A08:09: _OSC: platform does not support [SHPCHotplug AER LTR]
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:00:1c.0: PME: Signaling with IRQ 24
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:00:1c.5: PME: Signaling with IRQ 25
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:00:1c.6: PME: Signaling with IRQ 26
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:00:1c.7: PME: Signaling with IRQ 27
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:3a:00.0: PME: Signaling with IRQ 29
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:3c:00.0: pciehp: Slot #0 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:3c:04.0: pciehp: Slot #4 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:3c:0c.0: pciehp: Slot #12 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:3c:10.0: pciehp: Slot #16 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:3c:14.0: pciehp: Slot #20 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:5d:00.0: PME: Signaling with IRQ 37
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:5d:03.0: PME: Signaling with IRQ 38
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:ae:00.0: PME: Signaling with IRQ 40
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:b0:00.0: pciehp: Slot #32 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:b0:04.0: pciehp: Slot #36 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:b0:0c.0: pciehp: Slot #44 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:b0:10.0: pciehp: Slot #48 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+4月 18 10:24:13 ubuntu kernel: pcieport 0000:b0:14.0: pciehp: Slot #52 AttnBtn+ PwrCtrl+ MRL+ AttnInd+ PwrInd+ HotPlug+ Surprise- Interlock- NoCompl- LLActRep+
+4月 18 10:24:14 ubuntu kernel: nvidia: loading out-of-tree module taints kernel.
+4月 18 10:24:14 ubuntu kernel: nvidia: module license 'NVIDIA' taints kernel.
+4月 18 10:24:14 ubuntu kernel: nvidia: module verification failed: signature and/or required key missing - tainting kernel
+4月 18 10:24:14 ubuntu kernel: nvidia-nvlink: Nvlink Core is being initialized, major device number 234
+4月 18 10:24:14 ubuntu kernel: nvidia 0000:3d:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+4月 18 10:24:14 ubuntu kernel: nvidia 0000:3e:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+4月 18 10:24:14 ubuntu kernel: nvidia 0000:40:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+4月 18 10:24:14 ubuntu kernel: nvidia 0000:41:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+4月 18 10:24:15 ubuntu kernel: nvidia 0000:b1:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+4月 18 10:24:15 ubuntu kernel: nvidia 0000:b2:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+4月 18 10:24:15 ubuntu kernel: nvidia 0000:b4:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+4月 18 10:24:15 ubuntu kernel: nvidia 0000:b5:00.0: vgaarb: changed VGA decodes: olddecodes=io+mem,decodes=none:owns=none
+4月 18 10:24:15 ubuntu kernel: NVRM: loading NVIDIA UNIX x86_64 Kernel Module  550.144.03  Mon Dec 30 17:44:08 UTC 2024
+4月 18 10:24:15 ubuntu kernel: nvidia-modeset: Loading NVIDIA Kernel Mode Setting Driver for UNIX platforms  550.144.03  Mon Dec 30 17:10:10 UTC 2024
+4月 18 10:24:15 ubuntu kernel: [drm] [nvidia-drm] [GPU ID 0x00003d00] Loading driver
+4月 18 10:24:15 ubuntu kernel: [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:3d:00.0 on minor 1
+4月 18 10:24:15 ubuntu kernel: [drm] [nvidia-drm] [GPU ID 0x00003e00] Loading driver
+4月 18 10:24:15 ubuntu kernel: [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:3e:00.0 on minor 2
+4月 18 10:24:15 ubuntu kernel: [drm] [nvidia-drm] [GPU ID 0x00004000] Loading driver
+4月 18 10:24:15 ubuntu kernel: [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:40:00.0 on minor 3
+4月 18 10:24:15 ubuntu kernel: [drm] [nvidia-drm] [GPU ID 0x00004100] Loading driver
+4月 18 10:24:15 ubuntu kernel: [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:41:00.0 on minor 4
+4月 18 10:24:15 ubuntu kernel: [drm] [nvidia-drm] [GPU ID 0x0000b100] Loading driver
+4月 18 10:24:15 ubuntu kernel: [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:b1:00.0 on minor 5
+4月 18 10:24:15 ubuntu kernel: [drm] [nvidia-drm] [GPU ID 0x0000b200] Loading driver
+4月 18 10:24:15 ubuntu kernel: [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:b2:00.0 on minor 6
+4月 18 10:24:15 ubuntu kernel: [drm] [nvidia-drm] [GPU ID 0x0000b400] Loading driver
+4月 18 10:24:15 ubuntu kernel: [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:b4:00.0 on minor 7
+4月 18 10:24:15 ubuntu kernel: [drm] [nvidia-drm] [GPU ID 0x0000b500] Loading driver
+4月 18 10:24:15 ubuntu kernel: [drm] Initialized nvidia-drm 0.0.0 20160202 for 0000:b5:00.0 on minor 8
+4月 18 10:24:17 ubuntu kernel: audit: type=1400 audit(1776479057.174:8): apparmor="STATUS" operation="profile_load" profile="unconfined" name="nvidia_modprobe" pid=1864 comm="apparmor_parser"
+4月 18 10:24:17 ubuntu kernel: audit: type=1400 audit(1776479057.174:9): apparmor="STATUS" operation="profile_load" profile="unconfined" name="nvidia_modprobe//kmod" pid=1864 comm="apparmor_parser"
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input56
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input57
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input35
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input58
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input36
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input59
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input7
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input37
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input21
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input8
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input38
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input9
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input22
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input42
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input28
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input10
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input39
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input60
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input49
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input23
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input43
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input24
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=3 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input14
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input29
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input11
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input30
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input61
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input40
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input31
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input50
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input32
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input51
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input44
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input25
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input45
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input26
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=7 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input15
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input12
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=8 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input16
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:14.0/0000:b5:00.1/sound/card7/input62
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input17
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:10.0/0000:40:00.1/sound/card2/input41
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input33
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input46
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:00.0/0000:3d:00.1/sound/card0/input27
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=9 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input52
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input47
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:00.0/0000:b1:00.1/sound/card4/input13
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input18
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input19
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:14.0/0000:41:00.1/sound/card3/input34
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=10 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input53
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=11 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input54
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:10.0/0000:b4:00.1/sound/card6/input48
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:3a/0000:3a:00.0/0000:3b:00.0/0000:3c:04.0/0000:3e:00.1/sound/card1/input20
+4月 18 10:24:25 ubuntu kernel: input: HDA NVidia HDMI/DP,pcm=12 as /devices/pci0000:ae/0000:ae:00.0/0000:af:00.0/0000:b0:04.0/0000:b2:00.1/sound/card5/input55
+4月 18 10:55:32 ubuntu kernel: nvidia-uvm: Loaded the UVM driver, major device number 510.
+4月 19 23:07:38 ubuntu kernel: pcieport 0000:b0:04.0: pciehp: Slot(36): Link Down
+4月 19 23:07:38 ubuntu kernel: pcieport 0000:b0:04.0: pciehp: Slot(36): Card not present
+4月 19 23:07:38 ubuntu kernel: pcieport 0000:b0:04.0: pciehp: Slot(36): Already disabled
+4月 19 23:07:39 ubuntu kernel: NVRM: GPU at PCI:0000:b1:00: GPU-9bb2acac-1e0d-25ae-89de-9c2cc9c3279e
+4月 19 23:07:39 ubuntu kernel: NVRM: Xid (PCI:0000:b1:00): 79, pid='<unknown>', name=<unknown>, GPU has fallen off the bus.
+4月 19 23:07:39 ubuntu kernel: NVRM: GPU 0000:b1:00.0: GPU has fallen off the bus.
+4月 19 23:07:39 ubuntu kernel: pcieport 0000:b0:00.0: pciehp: Slot(32): Link Down
+4月 19 23:07:39 ubuntu kernel: pcieport 0000:b0:00.0: pciehp: Slot(32): Card not present
+4月 19 23:07:39 ubuntu kernel: pcieport 0000:b0:00.0: pciehp: Slot(32): Already disabled
+4月 19 23:07:39 ubuntu kernel: NVRM: GPU at PCI:0000:b2:00: GPU-2b3b2718-39cf-b7cd-f578-f5f7cc1a4fc5
+4月 19 23:07:39 ubuntu kernel: NVRM: Xid (PCI:0000:b2:00): 79, pid='<unknown>', name=<unknown>, GPU has fallen off the bus.
+4月 19 23:07:39 ubuntu kernel: NVRM: GPU 0000:b2:00.0: GPU has fallen off the bus.
+
