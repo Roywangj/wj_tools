@@ -4,7 +4,7 @@
 
 当前主要收录五类内容：
 
-- 代理配置与远程开发代理方案
+- 代理配置、HuggingFace 镜像下载、网络排障与开发机反向连接
 - LaTeX / Overleaf 写作环境配置
 - Ubuntu 服务器 SSH 密钥登录配置
 - Codex / Claude 相关使用与清理记录
@@ -12,7 +12,7 @@
 
 ## 快速导航
 
-### 1. 我想配置代理
+### 1. 我想配置代理 / 下载模型 / 排查网络
 
 从这里开始：
 
@@ -24,6 +24,19 @@
 - [proxy-setup-guide/proxy-quick-reference.md](./proxy-setup-guide/proxy-quick-reference.md)：常用命令速查
 - [proxy-setup-guide/服务器使用本地代理_laprf.md](./proxy-setup-guide/服务器使用本地代理_laprf.md)：服务器复用本地代理的补充方案
 - [proxy-setup-guide/校园网认证失败.md](./proxy-setup-guide/校园网认证失败.md)：校园网认证脚本被代理影响时的排查
+
+**稳定下载 HuggingFace 模型 / 数据集**（`hf-mirror.com` 是国内镜像，要直连、不能走国外代理，否则「开了代理反而下不动」）：
+
+- [proxy-setup-guide/hf-download.sh](./proxy-setup-guide/hf-download.sh)：包装 `huggingface-cli / hf`，下载期间**临时关代理（仅本进程）**并强制 `HF_ENDPOINT=hf-mirror`；支持 include/exclude 过滤、`hf_transfer`、aria2c。建议加别名 `alias hfd='~/wj_tools/proxy-setup-guide/hf-download.sh'`
+- [proxy-setup-guide/hfd.sh](./proxy-setup-guide/hfd.sh)：纯 aria2c 多连接高速下载器（仿官方 hfd），只依赖 `curl / python3 / aria2c`，支持断点续传、include/exclude、私有库 token、模型/数据集
+
+**网络体检与排障**：
+
+- [proxy-setup-guide/net-doctor.sh](./proxy-setup-guide/net-doctor.sh)：分层定位「开了代理却下不动」——基础网络 / DNS / 直连连通 / 代理体检 / HF 镜像专项，末尾给一句话结论 + 可复制的修复命令；`--fix` 清理拖累镜像的 git 全局代理
+
+**从开发机反向连回本地 Mac（远程开发反连）**：
+
+- [proxy-setup-guide/SSH反向隧道-开发机回连Mac.md](./proxy-setup-guide/SSH反向隧道-开发机回连Mac.md)：在云端开发机上反向 `ssh` 回本地 Mac，并借 Mac 网络访问只有 Mac 能路由到的私网服务器（`RemoteForward` 反向隧道方案，含配置、用法、保活与安全关停）
 
 ### 2. 我想配置 LaTeX / Overleaf 工作流
 
@@ -81,6 +94,10 @@ wj_tools/
 │   ├── proxy-quick-reference.md
 │   ├── 服务器使用本地代理_laprf.md
 │   ├── 校园网认证失败.md
+│   ├── SSH反向隧道-开发机回连Mac.md   # 开发机反向连回本地 Mac 及其私网服务器
+│   ├── hf-download.sh                  # HF 镜像稳定下载（包装 huggingface-cli/hf）
+│   ├── hfd.sh                          # HF 镜像高速下载（aria2c 多连接）
+│   ├── net-doctor.sh                   # 网络体检 / 排障（HF 镜像 + 代理）
 │   └── sync-proxy-config.sh
 ├── latex-setup-guide/
 │   ├── README.md
@@ -127,4 +144,4 @@ wj_tools/
 
 ---
 
-**最后更新**: 2026-04-26
+**最后更新**: 2026-07-07
