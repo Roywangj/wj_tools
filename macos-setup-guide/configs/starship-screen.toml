@@ -1,0 +1,113 @@
+# Screen twin of a catppuccin powerline starship.toml
+# Same layout / Nerd glyphs; 256-color ONLY (no #hex palette).
+#
+# Why: GNU screen 4.x drops SGR 38;2 / 48;2 truecolor → hollow powerline.
+# Install:
+#   mkdir -p ~/.config   # or /data_wj/.config
+#   cp configs/starship-screen.toml ~/.config/starship-screen.toml
+# Select automatically inside screen via zshrc-screen-snippet.zsh
+#
+# 256 approx catppuccin mocha:
+#   211 red/pink  216 peach  229 yellow  151 green
+#   117 sapphire  147 lavender  234 crust
+
+"$schema" = "https://starship.rs/config-schema.json"
+
+format = """
+[](fg:211)\
+$os\
+$username\
+[](bg:216 fg:211)\
+$directory\
+[](bg:229 fg:216)\
+$git_branch\
+$git_status\
+[](fg:229 bg:151)\
+$python\
+$conda\
+[](fg:151 bg:117)\
+[](fg:117 bg:147)\
+$time\
+[ ](fg:147)\
+$cmd_duration\
+$line_break\
+$character"""
+
+[os]
+disabled = false
+style = "bg:211 fg:234"
+
+[os.symbols]
+Windows = ""
+Ubuntu = "󰕈"
+SUSE = ""
+Raspbian = "󰐿"
+Mint = "󰣭"
+Macos = "󰀵"
+Manjaro = ""
+Linux = "󰌽"
+Gentoo = "󰣨"
+Fedora = "󰣛"
+Alpine = ""
+Amazon = ""
+Android = ""
+AOSC = ""
+Arch = "󰣇"
+Artix = "󰣇"
+CentOS = ""
+Debian = "󰣚"
+Redhat = "󱄛"
+RedHatEnterprise = "󱄛"
+
+[username]
+show_always = true
+style_user = "bg:211 fg:234"
+style_root = "bg:211 fg:234"
+format = "[ $user]($style)"
+
+[directory]
+style = "bg:216 fg:234"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = ""
+style = "bg:229"
+format = "[[ $symbol $branch ](fg:234 bg:229)]($style)"
+
+[git_status]
+style = "bg:229"
+format = "[[($all_status$ahead_behind )](fg:234 bg:229)]($style)"
+
+[python]
+symbol = ""
+style = "bg:151"
+format = "[[ $symbol( $version)(\\($virtualenv\\) ) ](fg:234 bg:151)]($style)"
+
+[conda]
+symbol = "  "
+style = "fg:234 bg:117"
+format = "[$symbol$environment ]($style)"
+ignore_base = true
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:147"
+format = "[[  $time ](fg:234 bg:147)]($style)"
+
+[line_break]
+disabled = false
+
+[character]
+disabled = false
+success_symbol = "[❯](bold fg:151)"
+error_symbol = "[❯](bold fg:211)"
+
+[cmd_duration]
+show_milliseconds = true
+format = " in $duration "
+style = "fg:147"
+disabled = false
+min_time = 2000

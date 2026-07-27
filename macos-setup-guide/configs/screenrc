@@ -1,0 +1,25 @@
+# GNU screen defaults for Starship / UTF-8 (teleai-gpu & lab servers)
+# Install: cp configs/screenrc ~/.screenrc
+# Always start with: screen -U   (or alias screen='screen -U')
+#
+# Fixes:
+#   - mojibake () from multi-byte / Nerd glyphs without UTF-8 mode
+#   - works together with C.UTF-8 locale + starship-screen.toml (256-color)
+
+startup_message off
+defscrollback 10000
+altscreen on
+
+# UTF-8 for all new windows (critical)
+defutf8 on
+defencoding utf8
+encoding utf8 utf8
+
+# 256-color terminfo (do not expect truecolor passthrough on screen 4.x)
+term screen-256color
+
+hardstatus off
+caption always "%{= kw}%-w%{= BW}%n %t%{-}%+w %=%c"
+
+bind k kill
+bind K kill

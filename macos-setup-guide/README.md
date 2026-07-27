@@ -20,7 +20,9 @@
 | **README.md**(本文件) | 总览 + 各步骤快速跳转 |
 | **[shell-config.md](./shell-config.md)** | 👉 手把手安装**完整正文**(所有命令、说明、踩坑) |
 | **[ubuntu-shell-config.md](./ubuntu-shell-config.md)** | 🐧 上面这套的 **Linux 服务器版**(SSH 连服务器时用) |
+| **[screen_bug.md](./screen_bug.md)** | 🐧 服务器 **GNU screen + Starship** 乱码 / 空心 powerline 修复 |
 | **[cheatsheet.md](./cheatsheet.md)** | 装完后的日常速查(别名 / 快捷键 / fnm / SSH key) |
+| **[configs/](./configs/)** | 可复制的配置模板(Starship / screen / zsh 片段等) |
 
 ---
 
@@ -71,3 +73,32 @@
 - 想保留 Oh My Zsh 框架的话,基础安装见 `server_install/ohmyzsh.md`。
 
 > 字体只装在**客户端**、服务器装无效;如果你用 Ghostty SSH 后遇到「一输入就 `❯` 变暗 / 补全错乱」,排错见本目录 [shell-config.md](./shell-config.md) 第 2 步的「关键坑」一节。
+
+---
+
+## 📺 服务器上 GNU screen 里 Starship 乱码 / 空心箭头?
+
+外面(SSH 直连 / **tmux**)prompt 正常,一进 **screen** 就变成 `` 或空心 `` —— 很常见,根因通常是两层叠在一起:
+
+1. **镜像没有 `en_US.UTF-8`**,只有 `C.utf8`,却 export 了不存在的 locale → 多字节字符碎裂  
+2. **GNU screen 4.x 丢掉 24-bit truecolor**,而花式 Starship 的 `#hex` palette 全是 truecolor → 只剩空心 powerline
+
+**完整方案 + 验收命令** → [**screen_bug.md**](./screen_bug.md)
+
+**配置模板**(复制到服务器即可):
+
+| 模板 | 装到 |
+|------|------|
+| [configs/screenrc](./configs/screenrc) | `~/.screenrc` |
+| [configs/starship-screen.toml](./configs/starship-screen.toml) | `~/.config/starship-screen.toml`(或 `/data_wj/.config/`) |
+| [configs/teleai-gpu.zshrc](./configs/teleai-gpu.zshrc) | teleai **完整** `/data_wj/.zshrc`(Starship/补全/历史/代理) |
+| [configs/zshrc-screen-snippet.zsh](./configs/zshrc-screen-snippet.zsh) | **合并**进已有 `.zshrc`(外 truecolor / 内 256 色 + `compinit`) |
+| [configs/00-locale-c-utf8.sh](./configs/00-locale-c-utf8.sh) | 可选 `/etc/profile.d/` |
+| [configs/startship.toml](./configs/startship.toml) | 外面用的 fancy Starship(文件名历史拼写;装成 `starship.toml`) |
+
+一句话策略:
+
+- **外面 / tmux** → truecolor `starship.toml`
+- **screen 内** → 自动 256 色双胞胎 + `C.UTF-8` + `screen -U`
+- **`.zshrc` 勿截断** → 必须保留 `compinit`(否则 screen 新窗 Tab 失效)
+- **历史** → 与 screen 共用 `HISTFILE`(teleai:`/data_wj/.zsh_history`)
